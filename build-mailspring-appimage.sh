@@ -1,5 +1,21 @@
 #!/bin/bash
 
+# ================================================
+#  Preveri, ali so potrebna zunanja orodja nameščena
+# ================================================
+required_tools=(curl grep wget ar tar uname)
+
+for tool in "${required_tools[@]}"; do
+  if ! command -v "$tool" &> /dev/null; then
+    echo "❌ Napaka: Orodje '$tool' ni nameščeno. Prosimo, namestite ga in poskusite znova."
+    missing=true
+  fi
+done
+
+if [ "$missing" = true ]; then
+  exit 1
+fi
+
 # ========================================================
 #  Script for building Mailspring AppImage
 #  Author: Barko
@@ -7,10 +23,10 @@
 #  Source/Idea: https://github.com/zydou/Mailspring-Linux
 #  License: MIT License
 #  Description: This script downloads, extracts, and builds
-#  an AppImage for the Mailspring application. Everything
-#  is executed in the current working directory of the
-#  user. Use the --verbose flag to show full command output;
-#  otherwise, only high-level progress messages are shown.
+#    an AppImage for the Mailspring application. Everything
+#    is executed in the current working directory of the
+#    user. Use the --verbose flag to show full command output;
+#    otherwise, only high-level progress messages are shown.
 # ========================================================
 
 # Check if --verbose flag was provided
@@ -51,7 +67,7 @@ if [ -z "$VERSION" ]; then
     echo ""
 fi
 
-VERSION_DIR="${ROOT:?}/$VERSION"
+VERSION_DIR="$ROOT/$VERSION"
 APPDIR="$VERSION_DIR/$APP.AppDir"
 DEB_FILE="$ROOT/${APP}-${VERSION}-amd64.deb"
 
@@ -78,6 +94,7 @@ else
         echo "✅ Using existing local copy of appimagetool"
     fi
 fi
+
 echo ""
 
 # ⬇️ Download .deb if not present
@@ -129,6 +146,7 @@ else
     cp "$VERSION_DIR/usr/share/applications/"*.desktop "$APPDIR/$APP.desktop" 2>/dev/null
     cp "$VERSION_DIR/usr/share/icons/hicolor/256x256/apps/"*.png "$APPDIR/$APP.png" 2>/dev/null
 fi
+
 echo ""
 
 cd "$VERSION_DIR" || exit 1
@@ -141,6 +159,7 @@ else
     ARCH=x86_64 "$APPIMAGETOOL" -n "$APPDIR" \
         "$ROOT/$APP-$VERSION-amd64.AppImage" > /dev/null 2>&1
 fi
+
 echo ""
 
 # 🏷️ Rename AppImage to remove version
@@ -165,3 +184,21 @@ fi
 
 echo "✅ AppImage for $APP ($VERSION) is ready at: $ROOT/$APP.AppImage"
 
+# 🏁 Ustvari .desktop datoteko
+DESKTOP_DIR="$HOME/.local/share/applications"
+mkdir -p "$DESKTOP_DIR"
+DESKTOP_FILE="$DESKTOP_DIR/$APP.desktop"
+
+cat > "$DESKTOP_FILE" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Mailspring
+Comment=Modern mail client built as AppImage
+Exec=$ROOT/$APP.AppImage %U
+Icon=$ROOT/$APP.png
+Terminal=false
+Categories=Network;Email;
+EOF
+
+echo "✅ .desktop datoteka ustvarjena: $DESKTOP_FILE"
