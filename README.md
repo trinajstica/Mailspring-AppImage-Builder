@@ -24,3 +24,4 @@ License: MIT
 
 ```bash
 ./build-mailspring-appimage.sh
+```

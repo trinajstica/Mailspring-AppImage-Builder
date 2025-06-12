@@ -168,6 +168,9 @@ if [ -f "$ROOT/$APP-$VERSION-amd64.AppImage" ]; then
     echo ""
 fi
 
+# 📌 Save icon next to AppImage for .desktop file
+cp "$VERSION_DIR/usr/share/icons/hicolor/256x256/apps/"*.png "$ROOT/$APP.png" 2>/dev/null
+
 # 🧹 Clean up .deb file
 if [ -f "$DEB_FILE" ]; then
     echo "🧹 Removing downloaded .deb package"
