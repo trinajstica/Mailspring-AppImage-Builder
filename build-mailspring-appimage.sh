@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # ================================================
-#  Preveri, ali so potrebna zunanja orodja nameščena
+#  Check if required external tools are installed
 # ================================================
 required_tools=(curl grep wget ar tar uname)
 
 for tool in "${required_tools[@]}"; do
   if ! command -v "$tool" &> /dev/null; then
-    echo "❌ Napaka: Orodje '$tool' ni nameščeno. Prosimo, namestite ga in poskusite znova."
+    echo "❌ Error: Tool '$tool' is not installed. Please install it and try again."
     missing=true
   fi
 done
@@ -187,7 +187,7 @@ fi
 
 echo "✅ AppImage for $APP ($VERSION) is ready at: $ROOT/$APP.AppImage"
 
-# 🏁 Ustvari .desktop datoteko
+# 🏁 Create .desktop file
 DESKTOP_DIR="$HOME/.local/share/applications"
 mkdir -p "$DESKTOP_DIR"
 DESKTOP_FILE="$DESKTOP_DIR/$APP.desktop"
@@ -204,4 +204,4 @@ Terminal=false
 Categories=Network;Email;
 EOF
 
-echo "✅ .desktop datoteka ustvarjena: $DESKTOP_FILE"
+echo "✅ .desktop file created: $DESKTOP_FILE"
