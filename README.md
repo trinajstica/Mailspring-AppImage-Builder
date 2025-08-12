@@ -25,3 +25,51 @@ License: MIT
 
 ```bash
 ./build-mailspring-appimage.sh
+```
+
+### Optional flags
+
+- `--verbose` — show detailed build output from all commands.
+- `-b` — after building the AppImage, create an **autostart `.desktop` file** in  
+  `~/.config/autostart/` that will launch the AppImage with the `-b` argument (background mode) when you log in.
+
+Example:
+
+```bash
+./build-mailspring-appimage.sh --verbose -b
+```
+
+This will:
+1. Build the Mailspring AppImage with detailed output.
+2. Install a `.desktop` file in `~/.local/share/applications/`.
+3. Create an autostart `.desktop` file in `~/.config/autostart/` to run Mailspring with `-b` at login.
+
+---
+
+## 📂 Output
+
+- **`Mailspring.AppImage`** — the portable application file in your current directory.
+- **`mailspring.png`** — the application icon (placed in the same directory as the AppImage).
+- **`~/.local/share/applications/mailspring.desktop`** — launcher entry for your desktop environment.
+- *(If `-b` used)* **`~/.config/autostart/mailspring-background.desktop`** — autostart entry for background launch.
+
+---
+
+## 🛠 Requirements
+
+Make sure these tools are installed on your system:
+
+- `curl`
+- `grep`
+- `wget`
+- `ar`
+- `tar`
+- `uname`
+
+If `appimagetool` is not installed system-wide, the script will download a local copy automatically.
+
+---
+
+## 📜 License
+
+MIT — see [LICENSE](LICENSE) file for details.
