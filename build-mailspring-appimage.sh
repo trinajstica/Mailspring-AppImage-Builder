@@ -27,14 +27,32 @@ fi
 #    is executed in the current working directory of the
 #    user. Use the --verbose flag to show full command output;
 #    otherwise, only high-level progress messages are shown.
+#    Add -b to also create an autostart entry that launches
+#    the AppImage with the -b (background) argument.
 # ========================================================
 
-# Check if --verbose flag was provided
+# -----------------------------
+# Parse flags: --verbose and -b
+# -----------------------------
 VERBOSE=false
-if [ "$1" = "--verbose" ]; then
-    VERBOSE=true
-    shift
-fi
+AUTOSTART_BG=false
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --verbose)
+      VERBOSE=true
+      shift
+      ;;
+    -b)
+      AUTOSTART_BG=true
+      shift
+      ;;
+    *)
+      echo "ℹ️  Ignoring unknown argument: $1"
+      shift
+      ;;
+  esac
+done
 
 echo "========================================"
 echo " Script: Build Mailspring AppImage"
@@ -187,7 +205,7 @@ fi
 
 echo "✅ AppImage for $APP ($VERSION) is ready at: $ROOT/$APP.AppImage"
 
-# 🏁 Create .desktop file
+# 🏁 Create .desktop file (applications)
 DESKTOP_DIR="$HOME/.local/share/applications"
 mkdir -p "$DESKTOP_DIR"
 DESKTOP_FILE="$DESKTOP_DIR/$APP.desktop"
@@ -205,3 +223,29 @@ Categories=Network;Email;
 EOF
 
 echo "✅ .desktop file created: $DESKTOP_FILE"
+
+# 🚀 Optional: Create autostart .desktop with -b if requested
+if [ "$AUTOSTART_BG" = true ]; then
+  AUTOSTART_DIR="$HOME/.config/autostart"
+  mkdir -p "$AUTOSTART_DIR"
+  AUTOSTART_FILE="$AUTOSTART_DIR/${APP}-background.desktop"
+
+  cat > "$AUTOSTART_FILE" << EOF
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Mailspring (Background)
+Comment=Automatically start Mailspring in background on login
+Exec=$ROOT/$APP.AppImage -b
+Icon=$ROOT/$APP.png
+Terminal=false
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=GNOME;KDE;XFCE;LXQt;LXDE;MATE;Cinnamon;Unity;
+Categories=Network;Email;
+EOF
+
+  echo "✅ Autostart entry created: $AUTOSTART_FILE"
+  echo "ℹ️  This autostart entry launches the AppImage with the '-b' (background) argument."
+  echo "ℹ️  To disable automatic startup, remove the file or set 'X-GNOME-Autostart-enabled=false'."
+fi
+
