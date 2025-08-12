@@ -17,6 +17,7 @@ License: MIT
 - Builds an AppImage using `appimagetool`
 - Works in your **current working directory**
 - Supports `--verbose` mode for detailed output
+- Optional `-b` flag to create an **autostart entry** that launches Mailspring in background mode at system login
 
 ---
 
@@ -24,4 +25,3 @@ License: MIT
 
 ```bash
 ./build-mailspring-appimage.sh
-```
