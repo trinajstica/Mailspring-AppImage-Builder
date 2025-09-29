@@ -242,6 +242,7 @@ Terminal=false
 X-GNOME-Autostart-enabled=true
 OnlyShowIn=GNOME;KDE;XFCE;LXQt;LXDE;MATE;Cinnamon;Unity;
 Categories=Network;Email;
+MimeType=x-scheme-handler/mailto;x-scheme-handler/mailspring;
 EOF
 
   echo "✅ Autostart entry created: $AUTOSTART_FILE"
