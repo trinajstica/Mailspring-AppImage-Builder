@@ -342,6 +342,5 @@ Categories=Network;Email;
 MimeType=x-scheme-handler/mailto;x-scheme-handler/mailspring;
 EOF
 
-    echo "✅ Autostart entry created: $AUTOSTART_FILE"
 fi
 
