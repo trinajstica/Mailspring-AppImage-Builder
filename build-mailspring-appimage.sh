@@ -1,19 +1,26 @@
 #!/bin/bash
 
+# Fail fast, treat unset variables as errors and make pipelines fail on first failed command
+set -euo pipefail
+IFS=$'\n\t'
+
 # ================================================
 #  Check if required external tools are installed
 # ================================================
 required_tools=(curl grep wget ar tar uname)
 
+# initialize
+missing=false
+
 for tool in "${required_tools[@]}"; do
-  if ! command -v "$tool" &> /dev/null; then
-    echo "❌ Error: Tool '$tool' is not installed. Please install it and try again."
-    missing=true
-  fi
+    if ! command -v "$tool" &> /dev/null; then
+        echo "❌ Error: Tool '$tool' is not installed. Please install it and try again."
+        missing=true
+    fi
 done
 
 if [ "$missing" = true ]; then
-  exit 1
+    exit 1
 fi
 
 # ========================================================
@@ -66,6 +73,15 @@ APP=mailspring
 ROOT="$(pwd)"
 VERSION="${VERSION:-}"
 
+# Detect system architecture and map to AppImage naming when needed
+UNAME_M=$(uname -m)
+case "$UNAME_M" in
+    x86_64|amd64) ARCH_STR="x86_64" ; DEB_ARCH="amd64" ;;
+    aarch64|arm64) ARCH_STR="aarch64" ; DEB_ARCH="arm64" ;;
+    armv7l|armv7) ARCH_STR="armv7" ; DEB_ARCH="armhf" ;;
+    *) ARCH_STR="$UNAME_M" ; DEB_ARCH="$UNAME_M" ;;
+esac
+
 # 🔍 Obtain the latest version from GitHub API if not set
 if [ -z "$VERSION" ]; then
     echo "📡 Fetching latest Mailspring version from GitHub..."
@@ -87,7 +103,21 @@ fi
 
 VERSION_DIR="$ROOT/$VERSION"
 APPDIR="$VERSION_DIR/$APP.AppDir"
-DEB_FILE="$ROOT/${APP}-${VERSION}-amd64.deb"
+DEB_FILE="$ROOT/${APP}-${VERSION}-${DEB_ARCH}.deb"
+
+# Find actual tar binary path to avoid shell aliases/functions that modify behaviour
+TAR_BIN=$(type -P tar 2>/dev/null || command -v tar 2>/dev/null || echo /usr/bin/tar)
+
+# helper to extract compressed data archives robustly
+_extract_tar() {
+    f="$1"
+    case "$f" in
+        *.xz) "$TAR_BIN" -xJf "$f" ;;
+        *.gz) "$TAR_BIN" -xzf "$f" ;;
+        *.bz2) "$TAR_BIN" -xjf "$f" ;;
+        *) "$TAR_BIN" -xf "$f" ;;
+    esac
+}
 
 mkdir -p "$VERSION_DIR"
 cd "$VERSION_DIR" || exit 1
@@ -101,8 +131,8 @@ else
     if [ ! -x "$APPIMAGETOOL" ]; then
         echo "⬇️ Downloading local copy of appimagetool..."
         if [ "$VERBOSE" = true ]; then
-            wget -O "$APPIMAGETOOL" \
-                "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-$(uname -m).AppImage"
+        wget -O "$APPIMAGETOOL" \
+            "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${ARCH_STR}.AppImage"
         else
             wget -q -O "$APPIMAGETOOL" \
                 "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-$(uname -m).AppImage"
@@ -120,10 +150,10 @@ if [ ! -f "$DEB_FILE" ]; then
     echo "⬇️ Downloading Mailspring .deb package (version $VERSION)..."
     if [ "$VERBOSE" = true ]; then
         wget -O "$DEB_FILE" \
-            "https://github.com/Foundry376/Mailspring/releases/download/${VERSION}/mailspring-${VERSION}-amd64.deb"
+            "https://github.com/Foundry376/Mailspring/releases/download/${VERSION}/mailspring-${VERSION}-${DEB_ARCH}.deb"
     else
         wget -q -O "$DEB_FILE" \
-            "https://github.com/Foundry376/Mailspring/releases/download/${VERSION}/mailspring-${VERSION}-amd64.deb"
+            "https://github.com/Foundry376/Mailspring/releases/download/${VERSION}/mailspring-${VERSION}-${DEB_ARCH}.deb"
     fi
     echo ""
 fi
@@ -132,10 +162,27 @@ fi
 if [ ! -f "$VERSION_DIR/debian-binary" ]; then
     if [ "$VERBOSE" = true ]; then
         ar x "$DEB_FILE"
-        tar xvf "$VERSION_DIR"/data.tar.*
+        # extract any data.tar.* (could be .xz, .gz, .bz2), pick first match
+        shopt -s nullglob
+        data_tar=("$VERSION_DIR"/data.tar.*)
+        shopt -u nullglob
+        if [ ${#data_tar[@]} -gt 0 ]; then
+            _extract_tar "${data_tar[0]}"
+        else
+            echo "❌ Error: data.tar.* not found inside the deb package"
+            exit 1
+        fi
     else
         ar x "$DEB_FILE" 2>/dev/null
-        tar xf "$VERSION_DIR"/data.tar.* 2>/dev/null
+        shopt -s nullglob
+        data_tar=("$VERSION_DIR"/data.tar.*)
+        shopt -u nullglob
+        if [ ${#data_tar[@]} -gt 0 ]; then
+            _extract_tar "${data_tar[0]}" 2>/dev/null
+        else
+            echo "❌ Error: data.tar.* not found inside the deb package"
+            exit 1
+        fi
     fi
     echo ""
 fi
@@ -171,18 +218,18 @@ cd "$VERSION_DIR" || exit 1
 
 # Run appimagetool
 if [ "$VERBOSE" = true ]; then
-    ARCH=x86_64 "$APPIMAGETOOL" -n --verbose "$APPDIR" \
-        "$ROOT/$APP-$VERSION-amd64.AppImage"
+    ARCH="$ARCH_STR" "$APPIMAGETOOL" -n --verbose "$APPDIR" \
+        "$ROOT/$APP-$VERSION-${ARCH_STR}.AppImage"
 else
-    ARCH=x86_64 "$APPIMAGETOOL" -n "$APPDIR" \
-        "$ROOT/$APP-$VERSION-amd64.AppImage" > /dev/null 2>&1
+    ARCH="$ARCH_STR" "$APPIMAGETOOL" -n "$APPDIR" \
+        "$ROOT/$APP-$VERSION-${ARCH_STR}.AppImage" > /dev/null 2>&1
 fi
 
 echo ""
 
 # 🏷️ Rename AppImage to remove version
-if [ -f "$ROOT/$APP-$VERSION-amd64.AppImage" ]; then
-    mv -v "$ROOT/$APP-$VERSION-amd64.AppImage" "$ROOT/$APP.AppImage"
+if [ -f "$ROOT/$APP-$VERSION-${ARCH_STR}.AppImage" ]; then
+    mv -v "$ROOT/$APP-$VERSION-${ARCH_STR}.AppImage" "$ROOT/$APP.AppImage"
     echo ""
 fi
 

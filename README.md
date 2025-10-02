@@ -68,6 +68,15 @@ Make sure these tools are installed on your system:
 
 If `appimagetool` is not installed system-wide, the script will download a local copy automatically.
 
+Additional recommended tools (for extracting compressed .deb payloads):
+
+- `xz-utils` (for .xz extraction)
+- `gzip` and `bzip2` (for .gz/.bz2 extraction)
+
+Note: the script handles common compression formats (xz, gz, bz2) when extracting `.deb` payloads. Running in a clean shell environment is recommended for predictable results.
+
+---
+
 ---
 
 ## 📜 License
