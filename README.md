@@ -32,11 +32,18 @@ License: MIT
 - `--verbose` — show detailed build output from all commands.
 - `-b` — after building the AppImage, create an **autostart `.desktop` file** in  
   `~/.config/autostart/` that will launch the AppImage with the `-b` argument (background mode) when you log in.
+ - `--remove` — remove installed artifacts (AppImage, icon, desktop entries, autostart entry, downloaded .deb, local appimagetool) from the system and exit; non-interactive.
 
 Example:
 
 ```bash
 ./build-mailspring-appimage.sh --verbose -b
+```
+
+Remove installed artifacts (non-interactive):
+
+```bash
+./build-mailspring-appimage.sh --remove
 ```
 
 This will:
