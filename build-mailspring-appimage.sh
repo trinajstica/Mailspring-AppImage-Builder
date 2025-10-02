@@ -342,8 +342,6 @@ Categories=Network;Email;
 MimeType=x-scheme-handler/mailto;x-scheme-handler/mailspring;
 EOF
 
-  echo "✅ Autostart entry created: $AUTOSTART_FILE"
-  echo "ℹ️  This autostart entry launches the AppImage with the '-b' (background) argument."
-  echo "ℹ️  To disable automatic startup, remove the file or set 'X-GNOME-Autostart-enabled=false'."
+    echo "✅ Autostart entry created: $AUTOSTART_FILE"
 fi
 
