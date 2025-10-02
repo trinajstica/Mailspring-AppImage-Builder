@@ -43,6 +43,7 @@ fi
 # -----------------------------
 VERBOSE=false
 AUTOSTART_BG=false
+REMOVE_ONLY=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -54,6 +55,10 @@ while [ $# -gt 0 ]; do
       AUTOSTART_BG=true
       shift
       ;;
+        --remove)
+            REMOVE_ONLY=true
+            shift
+            ;;
     *)
       echo "ℹ️  Ignoring unknown argument: $1"
       shift
@@ -72,6 +77,51 @@ echo ""
 APP=mailspring
 ROOT="$(pwd)"
 VERSION="${VERSION:-}"
+
+# Paths for removal (computed later when needed)
+APPIMAGE_PATH="$ROOT/$APP.AppImage"
+ICON_PATH="$ROOT/$APP.png"
+DESKTOP_FILE="$HOME/.local/share/applications/$APP.desktop"
+AUTOSTART_FILE="$HOME/.config/autostart/${APP}-background.desktop"
+LOCAL_APPIMAGETOOL="$ROOT/appimagetool"
+
+# Remove-installed-artifacts mode
+if [ "$REMOVE_ONLY" = true ]; then
+    echo "🧹 Removal mode: removing AppImage, icons, desktop entries and local appimagetool if present..."
+    [ -f "$APPIMAGE_PATH" ] && rm -v "$APPIMAGE_PATH" || echo "- $APPIMAGE_PATH not found"
+    [ -f "$ICON_PATH" ] && rm -v "$ICON_PATH" || echo "- $ICON_PATH not found"
+    if [ -f "$DESKTOP_FILE" ]; then
+        rm -v "$DESKTOP_FILE"
+        echo "- Removed desktop file: $DESKTOP_FILE"
+    else
+        echo "- Desktop file not found: $DESKTOP_FILE"
+    fi
+    if [ -f "$AUTOSTART_FILE" ]; then
+        rm -v "$AUTOSTART_FILE"
+        echo "- Removed autostart file: $AUTOSTART_FILE"
+    else
+        echo "- Autostart file not found: $AUTOSTART_FILE"
+    fi
+    if [ -f "$LOCAL_APPIMAGETOOL" ]; then
+        rm -v "$LOCAL_APPIMAGETOOL"
+        echo "- Removed local appimagetool: $LOCAL_APPIMAGETOOL"
+    else
+        echo "- Local appimagetool not found: $LOCAL_APPIMAGETOOL"
+    fi
+    # remove any downloaded debs matching mailspring-*.deb in ROOT
+    shopt -s nullglob
+    debs=("$ROOT"/mailspring-*.deb)
+    shopt -u nullglob
+    if [ ${#debs[@]} -gt 0 ]; then
+        for d in "${debs[@]}"; do
+            rm -v "$d"
+        done
+    else
+        echo "- No downloaded .deb files found in $ROOT"
+    fi
+    echo "🧹 Removal complete."
+    exit 0
+fi
 
 # Detect system architecture and map to AppImage naming when needed
 UNAME_M=$(uname -m)
